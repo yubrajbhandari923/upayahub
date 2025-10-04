@@ -81,9 +81,9 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'problem' | 'comment' | 'attempt', id: string } | null>(null);
-  const [recentProblems, setRecentProblems] = useState<Problem[]>([]);
-  const [sameLocationProblems, setSameLocationProblems] = useState<Problem[]>([]);
-  const [similarTagProblems, setSimilarTagProblems] = useState<Problem[]>([]);
+  const [recentProblems, setRecentProblems] = useState<Partial<Problem>[]>([]);
+  const [sameLocationProblems, setSameLocationProblems] = useState<Partial<Problem>[]>([]);
+  const [similarTagProblems, setSimilarTagProblems] = useState<Partial<Problem>[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(true);
 
   const locale = useLocale();
