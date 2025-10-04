@@ -14,11 +14,9 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and description */}
           <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <Mountain className="h-6 w-6 text-nepal-crimson" />
-              <span className="text-lg font-semibold text-nepal-blue">
-                समस्या समाधान
-              </span>
+            <div className="flex items-baseline mb-4">
+              <span className="text-xl font-bold text-nepal-crimson">उपाय</span>
+              <span className="text-xs font-semibold text-nepal-blue align-super">hub</span>
             </div>
             <p className="text-gray-600 text-sm leading-relaxed">
               {locale === 'en'
@@ -99,7 +97,7 @@ export function Footer() {
         <div className="mt-8 pt-8 border-t border-gray-200">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500">
-              © 2024 समस्या समाधान. {locale === 'en' ? 'All rights reserved.' : 'सबै अधिकार सुरक्षित।'}
+              © 2024 उपायhub. {locale === 'en' ? 'All rights reserved.' : 'सबै अधिकार सुरक्षित।'}
             </p>
             <p className="text-sm text-gray-500 mt-2 md:mt-0">
               {locale === 'en'

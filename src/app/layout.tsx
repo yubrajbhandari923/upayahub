@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nepal Community Problem-Solving Platform",
+  title: "उपायhub - Nepal Community Problem-Solving Platform",
   description: "A platform where community members can post real problems and share solution attempts.",
 };
 

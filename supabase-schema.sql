@@ -92,6 +92,18 @@ CREATE TABLE public.reports (
   reviewed_at timestamptz
 );
 
+-- Create feedback table
+CREATE TABLE public.feedback (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  name text,
+  email text,
+  feedback_type text CHECK (feedback_type IN ('bug','feature','improvement','other')) NOT NULL,
+  message text NOT NULL,
+  status text CHECK (status IN ('open','reviewed','resolved')) DEFAULT 'open',
+  created_at timestamptz DEFAULT now()
+);
+
 -- Create indexes for performance
 CREATE INDEX idx_problems_status ON public.problems(status);
 CREATE INDEX idx_problems_category ON public.problems(category);
@@ -109,6 +121,9 @@ CREATE INDEX idx_attempts_status ON public.attempts(status);
 
 CREATE INDEX idx_reports_status ON public.reports(status);
 CREATE INDEX idx_reports_target ON public.reports(target_type, target_id);
+
+CREATE INDEX idx_feedback_status ON public.feedback(status);
+CREATE INDEX idx_feedback_created_at ON public.feedback(created_at DESC);
 
 -- Create full-text search indexes
 CREATE INDEX idx_problems_search ON public.problems USING gin(to_tsvector('english', title || ' ' || description));
@@ -161,6 +176,7 @@ ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.comment_votes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
@@ -254,6 +270,15 @@ CREATE POLICY "Authenticated users can create reports" ON public.reports
 
 CREATE POLICY "Moderators can view and manage reports" ON public.reports
   FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
+  );
+
+-- Feedback policies
+CREATE POLICY "Anyone can submit feedback" ON public.feedback
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Moderators can view feedback" ON public.feedback
+  FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('moderator', 'admin'))
   );
 

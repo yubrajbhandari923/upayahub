@@ -85,6 +85,7 @@ export type Comment = {
   tag: 'idea' | 'question' | 'resource' | 'general'
   score: number
   created_at: string
+  updated_at: string
   profiles?: Profile
   replies?: Comment[]
 }
@@ -104,6 +105,7 @@ export type Attempt = {
     thumb_url?: string
   }>
   created_at: string
+  updated_at: string
   profiles?: Profile
 }
 

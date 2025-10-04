@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Ensure next-intl works properly with turbopack
+  }
 };
 
 export default nextConfig;

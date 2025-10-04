@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,25 +23,33 @@ export function Navigation() {
   const t = useTranslations('navigation');
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, loading } = useAuth();
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  const otherLocale = locale === 'en' ? 'ne' : 'en';
-  const otherLocaleName = locale === 'en' ? 'नेपाली' : 'English';
+  // Determine locale from pathname as fallback
+  const pathLocale = pathname.startsWith('/ne') ? 'ne' : pathname.startsWith('/en') ? 'en' : locale;
+  const otherLocale = pathLocale === 'en' ? 'ne' : 'en';
+  const switchLanguageText = pathLocale === 'en' ? 'नेपालीमा बदल्नुहोस्' : 'Change to English';
+
+  // Get the current path without locale prefix and reconstruct with new locale
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const pathWithoutLocale = pathSegments.length > 1 ? '/' + pathSegments.slice(1).join('/') : '/';
+  const switchToPath = `/${otherLocale}${pathWithoutLocale}`;
 
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
-      toast.error(locale === 'en' ? 'Failed to sign out' : 'साइन आउट गर्न असफल');
+      toast.error(pathLocale === 'en' ? 'Failed to sign out' : 'साइन आउट गर्न असफल');
     } else {
-      toast.success(locale === 'en' ? 'Signed out successfully' : 'सफलतापूर्वक साइन आउट भयो');
-      router.push(`/${locale}`);
+      toast.success(pathLocale === 'en' ? 'Signed out successfully' : 'सफलतापूर्वक साइन आउट भयो');
+      router.push(`/${pathLocale}`);
     }
   };
 
   const handleSignIn = () => {
-    router.push(`/${locale}/signin`);
+    router.push(`/${pathLocale}/signin`);
   };
 
   return (
@@ -50,35 +58,33 @@ export function Navigation() {
         <div className="flex justify-between h-16">
           {/* Logo and primary nav */}
           <div className="flex items-center">
-            <Link href={`/${locale}`} className="flex items-center space-x-2">
-              <Mountain className="h-8 w-8 text-nepal-crimson" />
-              <span className="text-xl font-bold text-nepal-blue">
-                समस्या समाधान
-              </span>
+            <Link href={`/${pathLocale}`} className="flex items-baseline">
+              <span className="text-2xl font-bold text-nepal-crimson">उपाय</span>
+              <span className="text-xs font-semibold text-nepal-blue align-super">hub</span>
             </Link>
 
             {/* Desktop navigation */}
             <div className="hidden md:ml-8 md:flex md:space-x-8">
               <Link
-                href={`/${locale}`}
+                href={`/${pathLocale}`}
                 className="text-gray-700 hover:text-nepal-crimson px-3 py-2 text-sm font-medium"
               >
                 {t('home')}
               </Link>
               <Link
-                href={`/${locale}/problems`}
+                href={`/${pathLocale}/problems`}
                 className="text-gray-700 hover:text-nepal-crimson px-3 py-2 text-sm font-medium"
               >
                 {t('problems')}
               </Link>
               <Link
-                href={`/${locale}/about`}
+                href={`/${pathLocale}/about`}
                 className="text-gray-700 hover:text-nepal-crimson px-3 py-2 text-sm font-medium"
               >
                 {t('about')}
               </Link>
               <Link
-                href={`/${locale}/guidelines`}
+                href={`/${pathLocale}/guidelines`}
                 className="text-gray-700 hover:text-nepal-crimson px-3 py-2 text-sm font-medium"
               >
                 {t('guidelines')}
@@ -89,24 +95,15 @@ export function Navigation() {
           {/* Right side - Language switcher, Submit, Sign in */}
           <div className="flex items-center space-x-4">
             {/* Language switcher */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Globe className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/${otherLocale}`}>
-                    {otherLocaleName}
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={switchToPath}>
+                {switchLanguageText}
+              </Link>
+            </Button>
 
             {/* Submit Problem Button */}
             <Button asChild className="hidden sm:flex">
-              <Link href={`/${locale}/submit`}>
+              <Link href={`/${pathLocale}/submit`}>
                 {t('submit')}
               </Link>
             </Button>
@@ -137,7 +134,7 @@ export function Navigation() {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href={`/${locale}/dashboard`}>
+                    <Link href={`/${pathLocale}/dashboard`}>
                       <User className="mr-2 h-4 w-4" />
                       <span>{t('dashboard')}</span>
                     </Link>
@@ -172,35 +169,35 @@ export function Navigation() {
           <div className="md:hidden border-t border-gray-200 pt-4 pb-4">
             <div className="space-y-2">
               <Link
-                href={`/${locale}`}
+                href={`/${pathLocale}`}
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-nepal-crimson"
                 onClick={() => setIsOpen(false)}
               >
                 {t('home')}
               </Link>
               <Link
-                href={`/${locale}/problems`}
+                href={`/${pathLocale}/problems`}
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-nepal-crimson"
                 onClick={() => setIsOpen(false)}
               >
                 {t('problems')}
               </Link>
               <Link
-                href={`/${locale}/submit`}
+                href={`/${pathLocale}/submit`}
                 className="block px-3 py-2 text-base font-medium text-nepal-crimson font-semibold"
                 onClick={() => setIsOpen(false)}
               >
                 {t('submit')}
               </Link>
               <Link
-                href={`/${locale}/about`}
+                href={`/${pathLocale}/about`}
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-nepal-crimson"
                 onClick={() => setIsOpen(false)}
               >
                 {t('about')}
               </Link>
               <Link
-                href={`/${locale}/guidelines`}
+                href={`/${pathLocale}/guidelines`}
                 className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-nepal-crimson"
                 onClick={() => setIsOpen(false)}
               >

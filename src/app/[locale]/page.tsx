@@ -4,19 +4,59 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Users, MessageSquare, Lightbulb, Mountain } from 'lucide-react';
+import { getSupabase, isSupabaseConfigured, type Problem } from '@/lib/supabase';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations();
 
+  // Fetch recent problems
+  let recentProblems: Problem[] = [];
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = getSupabase();
+      const { data, error } = await supabase
+        .from('problems')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (!error && data) {
+        // Fetch profiles for each problem
+        recentProblems = await Promise.all(
+          data.map(async (problem) => {
+            if (problem.author_id) {
+              try {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('display_name, avatar_url')
+                  .eq('id', problem.author_id)
+                  .single();
+                return { ...problem, profiles: profile || null };
+              } catch {
+                return { ...problem, profiles: null };
+              }
+            }
+            return problem;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching problems:', error);
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-himalaya to-white py-20 lg:py-32">
-        {/* Subtle mountain pattern */}
+        {/* Subtle logo pattern */}
         <div className="absolute inset-0 opacity-5">
-          <div className="flex items-end justify-center h-full">
-            <Mountain className="h-64 w-64 text-nepal-blue" />
+          <div className="flex items-center justify-center h-full">
+            <div className="flex items-baseline">
+              <span className="text-9xl font-bold text-nepal-crimson">उपाय</span>
+              <span className="text-5xl font-semibold text-nepal-blue align-super">hub</span>
+            </div>
           </div>
         </div>
 
@@ -136,101 +176,59 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </p>
           </div>
 
-          {/* Sample problem cards - these would be dynamic in the real app */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Badge variant="secondary">
-                    {locale === 'en' ? 'Technical' : 'प्राविधिक'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {locale === 'en' ? 'Open' : 'खुला'}
-                  </Badge>
-                </div>
-                <CardTitle className="line-clamp-2">
-                  {locale === 'en'
-                    ? 'Solar power solution for remote village schools'
-                    : 'दुर्गम गाउँका विद्यालयहरूका लागि सौर्य ऊर्जा समाधान'
-                  }
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="line-clamp-3 mb-4">
-                  {locale === 'en'
-                    ? 'Our village school in Dolakha has no electricity. Looking for affordable solar solutions that can power 3 classrooms and basic computers.'
-                    : 'दोलखाको हाम्रो गाउँको विद्यालयमा बिजुली छैन। ३ वटा कक्षाकोठा र आधारभूत कम्प्युटरहरू चलाउने सस्तो सौर्य समाधान खोजिरहेका छौं।'
-                  }
-                </CardDescription>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>12 {locale === 'en' ? 'discussions' : 'छलफलहरू'}</span>
-                  <span>3 {locale === 'en' ? 'attempts' : 'प्रयासहरू'}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Badge variant="secondary">
-                    {locale === 'en' ? 'Policy' : 'नीति'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {locale === 'en' ? 'In Progress' : 'प्रगतिमा'}
-                  </Badge>
-                </div>
-                <CardTitle className="line-clamp-2">
-                  {locale === 'en'
-                    ? 'Improving waste management in local municipalities'
-                    : 'स्थानीय नगरपालिकाहरूमा फोहोर व्यवस्थापन सुधार'
-                  }
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="line-clamp-3 mb-4">
-                  {locale === 'en'
-                    ? 'Plastic waste is accumulating in our neighborhood. Need help drafting a proposal for the municipality to implement proper recycling programs.'
-                    : 'हाम्रो छिमेकमा प्लास्टिकको फोहोर जम्मा भइरहेको छ। नगरपालिकामा उचित पुनर्चक्रण कार्यक्रमहरू लागू गर्न प्रस्ताव मस्यौदा तयार गर्न मद्दत चाहिन्छ।'
-                  }
-                </CardDescription>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>8 {locale === 'en' ? 'discussions' : 'छलफलहरू'}</span>
-                  <span>2 {locale === 'en' ? 'attempts' : 'प्रयासहरू'}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Badge variant="secondary">
-                    {locale === 'en' ? 'Both' : 'दुवै'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs text-green-600">
-                    {locale === 'en' ? 'Solved' : 'हल भएको'}
-                  </Badge>
-                </div>
-                <CardTitle className="line-clamp-2">
-                  {locale === 'en'
-                    ? 'Digital literacy program for elderly citizens'
-                    : 'बुजुर्ग नागरिकहरूका लागि डिजिटल साक्षरता कार्यक्रम'
-                  }
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription className="line-clamp-3 mb-4">
-                  {locale === 'en'
-                    ? 'Many elderly people in our community struggle with smartphones and digital payments. Successfully created a training program with local volunteers.'
-                    : 'हाम्रो समुदायका धेरै बुजुर्गहरूलाई स्मार्टफोन र डिजिटल भुक्तानीमा समस्या छ। स्थानीय स्वयंसेवकहरूसँग मिलेर सफलतापूर्वक प्रशिक्षण कार्यक्रम सिर्जना गर्यौं।'
-                  }
-                </CardDescription>
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <span>15 {locale === 'en' ? 'discussions' : 'छलफलहरू'}</span>
-                  <span>5 {locale === 'en' ? 'attempts' : 'प्रयासहरू'}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Recent problem cards */}
+          {recentProblems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {recentProblems.map((problem) => (
+                <Link key={problem.id} href={`/${locale}/problems/${problem.id}`}>
+                  <Card className="hover:shadow-lg transition-shadow h-full">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <Badge variant="secondary">
+                          {t(`categories.${problem.category}`)}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${
+                            problem.status === 'solved' ? 'text-green-600 border-green-600' :
+                            problem.status === 'in_progress' ? 'text-blue-600 border-blue-600' :
+                            'text-gray-600 border-gray-600'
+                          }`}
+                        >
+                          {t(`statuses.${problem.status}`)}
+                        </Badge>
+                      </div>
+                      <CardTitle className="line-clamp-2">
+                        {problem.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription className="line-clamp-3 mb-4">
+                        {problem.description}
+                      </CardDescription>
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <span>{problem.profiles?.display_name || (locale === 'en' ? 'Anonymous' : 'अज्ञात')}</span>
+                        <span>↑ {problem.score}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 mb-8">
+              <p className="text-gray-600 mb-4">
+                {locale === 'en'
+                  ? 'No problems posted yet. Be the first to share a problem!'
+                  : 'अझै कुनै समस्या पोस्ट गरिएको छैन। समस्या साझेदारी गर्ने पहिलो बन्नुहोस्!'}
+              </p>
+              <Button asChild>
+                <Link href={`/${locale}/submit`}>
+                  {locale === 'en' ? 'Post First Problem' : 'पहिलो समस्या पोस्ट गर्नुहोस्'}
+                </Link>
+              </Button>
+            </div>
+          )}
 
           <div className="text-center">
             <Button asChild variant="outline" size="lg">

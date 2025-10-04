@@ -22,8 +22,24 @@ import {
   Lightbulb,
   Plus,
   Loader2,
-  Send
+  Send,
+  MoreVertical,
+  Edit,
+  Trash2
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { getSupabase } from '@/lib/supabase';
 import type { Problem, Comment, Attempt } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
@@ -52,6 +68,17 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
   const [submittingAttempt, setSubmittingAttempt] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
   const [loadingAttempts, setLoadingAttempts] = useState(true);
+  const [editingComment, setEditingComment] = useState<string | null>(null);
+  const [editingAttempt, setEditingAttempt] = useState<string | null>(null);
+  const [editCommentBody, setEditCommentBody] = useState('');
+  const [editAttemptData, setEditAttemptData] = useState({
+    title: '',
+    summary: '',
+    status: 'working' as 'working' | 'partial' | 'failed',
+    lessons: ''
+  });
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ type: 'problem' | 'comment' | 'attempt', id: string } | null>(null);
 
   const locale = useLocale();
   const router = useRouter();
@@ -323,6 +350,117 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
     }
   };
 
+  const handleDeleteClick = (type: 'problem' | 'comment' | 'attempt', id: string) => {
+    setItemToDelete({ type, id });
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const supabase = getSupabase();
+      const tableName = itemToDelete.type === 'problem' ? 'problems' : itemToDelete.type === 'comment' ? 'comments' : 'attempts';
+
+      console.log('Deleting:', itemToDelete.type, 'ID:', itemToDelete.id, 'Table:', tableName);
+
+      const { data, error } = await supabase
+        .from(tableName)
+        .delete()
+        .eq('id', itemToDelete.id);
+
+      console.log('Delete result:', { data, error });
+
+      if (error) {
+        console.error('Delete error:', error);
+        toast.error(
+          locale === 'en'
+            ? `Failed to delete: ${error.message}`
+            : `मेटाउन असफल: ${error.message}`
+        );
+      } else {
+        toast.success(locale === 'en' ? 'Deleted successfully' : 'सफलतापूर्वक मेटाइयो');
+
+        if (itemToDelete.type === 'problem') {
+          router.push(`/${locale}/problems`);
+        } else if (itemToDelete.type === 'comment') {
+          fetchComments();
+        } else {
+          fetchAttempts();
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting:', error);
+      toast.error(locale === 'en' ? 'An error occurred' : 'त्रुटि देखा पर्‍यो');
+    } finally {
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleEditComment = async (commentId: string) => {
+    if (!editCommentBody.trim()) {
+      toast.error(locale === 'en' ? 'Comment cannot be empty' : 'टिप्पणी खाली हुन सक्दैन');
+      return;
+    }
+
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('comments')
+        .update({
+          body: editCommentBody.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', commentId);
+
+      if (error) {
+        toast.error(locale === 'en' ? 'Failed to update comment' : 'टिप्पणी अपडेट गर्न असफल');
+      } else {
+        toast.success(locale === 'en' ? 'Comment updated!' : 'टिप्पणी अपडेट गरियो!');
+        setEditingComment(null);
+        setEditCommentBody('');
+        fetchComments();
+      }
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      toast.error(locale === 'en' ? 'An error occurred' : 'त्रुटि देखा पर्‍यो');
+    }
+  };
+
+  const handleEditAttempt = async (attemptId: string) => {
+    if (!editAttemptData.title.trim() || !editAttemptData.summary.trim() || !editAttemptData.lessons.trim()) {
+      toast.error(locale === 'en' ? 'Please fill all required fields' : 'कृपया सबै आवश्यक क्षेत्रहरू भर्नुहोस्');
+      return;
+    }
+
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase
+        .from('attempts')
+        .update({
+          title: editAttemptData.title.trim(),
+          summary: editAttemptData.summary.trim(),
+          status: editAttemptData.status,
+          lessons: editAttemptData.lessons.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', attemptId);
+
+      if (error) {
+        toast.error(locale === 'en' ? 'Failed to update attempt' : 'प्रयास अपडेट गर्न असफल');
+      } else {
+        toast.success(locale === 'en' ? 'Attempt updated!' : 'प्रयास अपडेट गरियो!');
+        setEditingAttempt(null);
+        setEditAttemptData({ title: '', summary: '', status: 'working', lessons: '' });
+        fetchAttempts();
+      }
+    } catch (error) {
+      console.error('Error updating attempt:', error);
+      toast.error(locale === 'en' ? 'An error occurred' : 'त्रुटि देखा पर्‍यो');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString(locale === 'en' ? 'en-US' : 'ne-NP', {
@@ -432,6 +570,28 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                     <Button variant="ghost" size="sm">
                       <Flag className="h-4 w-4" />
                     </Button>
+                    {user && problem.author_id === user.id && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => router.push(`/${locale}/problems/${problem.id}/edit`)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            {locale === 'en' ? 'Edit Problem' : 'समस्या सम्पादन गर्नुहोस्'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick('problem', problem.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {locale === 'en' ? 'Delete Problem' : 'समस्या मेटाउनुहोस्'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                 </div>
               </CardHeader>
@@ -571,31 +731,82 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                   <div className="space-y-4">
                     {comments.map((comment) => (
                       <div key={comment.id} className="border rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={comment.profiles?.avatar_url} />
-                            <AvatarFallback>
-                              {comment.profiles?.display_name?.[0] || 'U'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">
-                                {comment.profiles?.display_name || (locale === 'en' ? 'Anonymous' : 'अज्ञात')}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {comment.tag === 'idea' ? (locale === 'en' ? 'Idea' : 'विचार') :
-                                 comment.tag === 'question' ? (locale === 'en' ? 'Question' : 'प्रश्न') :
-                                 comment.tag === 'resource' ? (locale === 'en' ? 'Resource' : 'स्रोत') :
-                                 (locale === 'en' ? 'General' : 'सामान्य')}
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                {formatDate(comment.created_at)}
-                              </span>
+                        {editingComment === comment.id ? (
+                          <div className="space-y-3">
+                            <Textarea
+                              value={editCommentBody}
+                              onChange={(e) => setEditCommentBody(e.target.value)}
+                              rows={4}
+                            />
+                            <div className="flex gap-2">
+                              <Button size="sm" onClick={() => handleEditComment(comment.id)}>
+                                {locale === 'en' ? 'Save' : 'सेभ गर्नुहोस्'}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => {
+                                setEditingComment(null);
+                                setEditCommentBody('');
+                              }}>
+                                {locale === 'en' ? 'Cancel' : 'रद्द गर्नुहोस्'}
+                              </Button>
                             </div>
-                            <p className="text-sm text-gray-700">{comment.body}</p>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={comment.profiles?.avatar_url} />
+                              <AvatarFallback>
+                                {comment.profiles?.display_name?.[0] || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium text-sm">
+                                  {comment.profiles?.display_name || (locale === 'en' ? 'Anonymous' : 'अज्ञात')}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {comment.tag === 'idea' ? (locale === 'en' ? 'Idea' : 'विचार') :
+                                   comment.tag === 'question' ? (locale === 'en' ? 'Question' : 'प्रश्न') :
+                                   comment.tag === 'resource' ? (locale === 'en' ? 'Resource' : 'स्रोत') :
+                                   (locale === 'en' ? 'General' : 'सामान्य')}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  {formatDate(comment.created_at)}
+                                </span>
+                                {comment.updated_at && comment.updated_at !== comment.created_at && (
+                                  <span className="text-xs text-gray-400">
+                                    ({locale === 'en' ? 'edited' : 'सम्पादित'})
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-700">{comment.body}</p>
+                            </div>
+                            {user && comment.author_id === user.id && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => {
+                                    setEditingComment(comment.id);
+                                    setEditCommentBody(comment.body);
+                                  }}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    {locale === 'en' ? 'Edit' : 'सम्पादन गर्नुहोस्'}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteClick('comment', comment.id)}
+                                    className="text-red-600"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    {locale === 'en' ? 'Delete' : 'मेटाउनुहोस्'}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -713,47 +924,145 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                   <div className="space-y-4">
                     {attempts.map((attempt) => (
                       <Card key={attempt.id}>
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge variant={
-                                  attempt.status === 'working' ? 'default' :
-                                  attempt.status === 'partial' ? 'secondary' :
-                                  'outline'
-                                }>
-                                  {attempt.status === 'working' ? (locale === 'en' ? 'Working' : 'काम गरिरहेको') :
-                                   attempt.status === 'partial' ? (locale === 'en' ? 'Partial' : 'आंशिक') :
-                                   (locale === 'en' ? 'Failed' : 'असफल')}
-                                </Badge>
+                        {editingAttempt === attempt.id ? (
+                          <CardContent className="pt-6">
+                            <div className="space-y-4">
+                              <div>
+                                <Label>{locale === 'en' ? 'Title' : 'शीर्षक'}</Label>
+                                <input
+                                  type="text"
+                                  className="w-full px-3 py-2 border rounded-md mt-1"
+                                  value={editAttemptData.title}
+                                  onChange={(e) => setEditAttemptData({ ...editAttemptData, title: e.target.value })}
+                                />
                               </div>
-                              <CardTitle className="text-lg">{attempt.title}</CardTitle>
-                              <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src={attempt.profiles?.avatar_url} />
-                                  <AvatarFallback>
-                                    {attempt.profiles?.display_name?.[0] || 'U'}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span>{attempt.profiles?.display_name || (locale === 'en' ? 'Anonymous' : 'अज्ञात')}</span>
-                                <span>•</span>
-                                <span>{formatDate(attempt.created_at)}</span>
+                              <div>
+                                <Label>{locale === 'en' ? 'Status' : 'स्थिति'}</Label>
+                                <Select
+                                  value={editAttemptData.status}
+                                  onValueChange={(value: any) => setEditAttemptData({ ...editAttemptData, status: value })}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="working">{locale === 'en' ? 'Working' : 'काम गरिरहेको'}</SelectItem>
+                                    <SelectItem value="partial">{locale === 'en' ? 'Partial' : 'आंशिक'}</SelectItem>
+                                    <SelectItem value="failed">{locale === 'en' ? 'Failed' : 'असफल'}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label>{locale === 'en' ? 'Summary' : 'सारांश'}</Label>
+                                <Textarea
+                                  className="mt-1"
+                                  value={editAttemptData.summary}
+                                  onChange={(e) => setEditAttemptData({ ...editAttemptData, summary: e.target.value })}
+                                  rows={3}
+                                />
+                              </div>
+                              <div>
+                                <Label>{locale === 'en' ? 'Lessons Learned' : 'सिकेका कुराहरू'}</Label>
+                                <Textarea
+                                  className="mt-1"
+                                  value={editAttemptData.lessons}
+                                  onChange={(e) => setEditAttemptData({ ...editAttemptData, lessons: e.target.value })}
+                                  rows={3}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" onClick={() => handleEditAttempt(attempt.id)}>
+                                  {locale === 'en' ? 'Save' : 'सेभ गर्नुहोस्'}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => {
+                                  setEditingAttempt(null);
+                                  setEditAttemptData({ title: '', summary: '', status: 'working', lessons: '' });
+                                }}>
+                                  {locale === 'en' ? 'Cancel' : 'रद्द गर्नुहोस्'}
+                                </Button>
                               </div>
                             </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-3">
-                            <div>
-                              <h4 className="font-medium text-sm mb-1">{locale === 'en' ? 'Summary' : 'सारांश'}</h4>
-                              <p className="text-sm text-gray-700">{attempt.summary}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-sm mb-1">{locale === 'en' ? 'Lessons Learned' : 'सिकेका कुराहरू'}</h4>
-                              <p className="text-sm text-gray-700">{attempt.lessons}</p>
-                            </div>
-                          </div>
-                        </CardContent>
+                          </CardContent>
+                        ) : (
+                          <>
+                            <CardHeader>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant={
+                                      attempt.status === 'working' ? 'default' :
+                                      attempt.status === 'partial' ? 'secondary' :
+                                      'outline'
+                                    }>
+                                      {attempt.status === 'working' ? (locale === 'en' ? 'Working' : 'काम गरिरहेको') :
+                                       attempt.status === 'partial' ? (locale === 'en' ? 'Partial' : 'आंशिक') :
+                                       (locale === 'en' ? 'Failed' : 'असफल')}
+                                    </Badge>
+                                  </div>
+                                  <CardTitle className="text-lg">{attempt.title}</CardTitle>
+                                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={attempt.profiles?.avatar_url} />
+                                      <AvatarFallback>
+                                        {attempt.profiles?.display_name?.[0] || 'U'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span>{attempt.profiles?.display_name || (locale === 'en' ? 'Anonymous' : 'अज्ञात')}</span>
+                                    <span>•</span>
+                                    <span>{formatDate(attempt.created_at)}</span>
+                                    {attempt.updated_at && attempt.updated_at !== attempt.created_at && (
+                                      <span className="text-xs text-gray-400">
+                                        ({locale === 'en' ? 'edited' : 'सम्पादित'})
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                {user && attempt.author_id === user.id && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => {
+                                        setEditingAttempt(attempt.id);
+                                        setEditAttemptData({
+                                          title: attempt.title,
+                                          summary: attempt.summary,
+                                          status: attempt.status,
+                                          lessons: attempt.lessons
+                                        });
+                                      }}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        {locale === 'en' ? 'Edit' : 'सम्पादन गर्नुहोस्'}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteClick('attempt', attempt.id)}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        {locale === 'en' ? 'Delete' : 'मेटाउनुहोस्'}
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div>
+                                  <h4 className="font-medium text-sm mb-1">{locale === 'en' ? 'Summary' : 'सारांश'}</h4>
+                                  <p className="text-sm text-gray-700">{attempt.summary}</p>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-sm mb-1">{locale === 'en' ? 'Lessons Learned' : 'सिकेका कुराहरू'}</h4>
+                                  <p className="text-sm text-gray-700">{attempt.lessons}</p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </>
+                        )}
                       </Card>
                     ))}
                   </div>
@@ -848,6 +1157,35 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {locale === 'en' ? 'Confirm Deletion' : 'मेटाउने पुष्टि गर्नुहोस्'}
+            </DialogTitle>
+            <DialogDescription>
+              {locale === 'en'
+                ? `Are you sure you want to delete this ${itemToDelete?.type}? This action cannot be undone.`
+                : `के तपाईं यो ${
+                    itemToDelete?.type === 'problem' ? 'समस्या' :
+                    itemToDelete?.type === 'comment' ? 'टिप्पणी' :
+                    'प्रयास'
+                  } मेटाउन निश्चित हुनुहुन्छ? यो कार्य पूर्ववत गर्न सकिँदैन।`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              {locale === 'en' ? 'Cancel' : 'रद्द गर्नुहोस्'}
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              {locale === 'en' ? 'Delete' : 'मेटाउनुहोस्'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

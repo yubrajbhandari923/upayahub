@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, MessageSquare, Lightbulb, Heart, Mountain, Globe } from 'lucide-react';
+import { FeedbackForm } from '@/components/forms/FeedbackForm';
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -11,8 +12,9 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <Mountain className="h-16 w-16 text-nepal-crimson" />
+          <div className="flex justify-center items-baseline mb-6">
+            <span className="text-5xl font-bold text-nepal-crimson">उपाय</span>
+            <span className="text-2xl font-semibold text-nepal-blue align-super">hub</span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             {locale === 'en' ? 'About Our Platform' : 'हाम्रो प्लेटफर्मको बारेमा'}
@@ -165,7 +167,7 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
         </Card>
 
         {/* Get Involved */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="text-2xl text-center">
               {locale === 'en' ? 'Join Our Community' : 'हाम्रो समुदायमा सामेल हुनुहोस्'}
@@ -204,6 +206,9 @@ export default async function AboutPage({ params }: { params: Promise<{ locale: 
             </div>
           </CardContent>
         </Card>
+
+        {/* Feedback Form */}
+        <FeedbackForm locale={locale} />
       </div>
     </div>
   );
