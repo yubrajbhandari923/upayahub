@@ -1,0 +1,99 @@
+{
+  "navigation": {
+    "home": "Home",
+    "problems": "Problems",
+    "submit": "Submit Problem",
+    "about": "About",
+    "guidelines": "Guidelines",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "account": "Account",
+    "dashboard": "Dashboard",
+    "moderation": "Moderation"
+  },
+  "hero": {
+    "title": "Real problems. Real learning. Real impact.",
+    "subtitle": "Join Nepal's community of problem-solvers sharing challenges and solutions.",
+    "cta": "Start with a real problem",
+    "browseCta": "Browse Problems"
+  },
+  "problems": {
+    "title": "Community Problems",
+    "search": "Search problems...",
+    "filters": "Filters",
+    "sort": "Sort",
+    "category": "Category",
+    "tags": "Tags",
+    "location": "Location",
+    "language": "Language",
+    "status": "Status",
+    "newest": "Newest",
+    "mostDiscussed": "Most Discussed",
+    "top": "Top",
+    "noResults": "No problems found"
+  },
+  "problemDetail": {
+    "discussions": "Discussions",
+    "attempts": "Attempts & Learnings",
+    "addComment": "Add Comment",
+    "addAttempt": "Add Attempt",
+    "upvote": "Upvote",
+    "downvote": "Downvote",
+    "report": "Report",
+    "share": "Share"
+  },
+  "submit": {
+    "title": "Post a Problem",
+    "titleField": "Problem Title",
+    "description": "Description",
+    "category": "Category",
+    "tags": "Tags",
+    "location": "Location (Optional)",
+    "media": "Add Images or Videos",
+    "submit": "Post Problem",
+    "guidelines": "Be specific. Add photos. Share constraints like cost, time, tools available."
+  },
+  "attempt": {
+    "title": "Share Your Attempt",
+    "titleField": "Attempt Title",
+    "summary": "Summary",
+    "status": "Status",
+    "lessons": "Lessons Learned",
+    "links": "Links",
+    "submit": "Share Attempt",
+    "helpText": "Partial or failed attempts are valuable—share what didn't work so others learn."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "required": "Required",
+    "optional": "Optional"
+  },
+  "categories": {
+    "technical": "Technical",
+    "policy": "Policy",
+    "both": "Both"
+  },
+  "statuses": {
+    "open": "Open",
+    "in_progress": "In Progress",
+    "solved": "Solved",
+    "archived": "Archived",
+    "working": "Working",
+    "partial": "Partial",
+    "failed": "Failed"
+  },
+  "reportReasons": {
+    "spam": "Spam",
+    "abuse": "Abuse",
+    "misinfo": "Misinformation",
+    "duplicate": "Duplicate",
+    "offtopic": "Off-topic",
+    "other": "Other"
+  }
+}
