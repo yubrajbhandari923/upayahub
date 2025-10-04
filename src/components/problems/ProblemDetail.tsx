@@ -621,7 +621,7 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                 {problem.media && problem.media.length > 0 && (
                   <div className="mt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {problem.media.map((media: any, index) => (
+                      {problem.media.map((media: { type: string; url: string; thumb_url?: string }, index) => (
                         <div key={index} className="rounded-lg overflow-hidden">
                           {media.type === 'image' ? (
                             <img
@@ -673,7 +673,7 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="comment-tag">{locale === 'en' ? 'Comment Type' : 'टिप्पणी प्रकार'}</Label>
-                        <Select value={commentTag} onValueChange={(value: any) => setCommentTag(value)}>
+                        <Select value={commentTag} onValueChange={(value: 'idea' | 'question' | 'resource' | 'general') => setCommentTag(value)}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -855,7 +855,7 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                       </div>
                       <div>
                         <Label htmlFor="attempt-status">{locale === 'en' ? 'Status' : 'स्थिति'} *</Label>
-                        <Select value={attemptData.status} onValueChange={(value: any) => setAttemptData({ ...attemptData, status: value })}>
+                        <Select value={attemptData.status} onValueChange={(value: 'working' | 'partial' | 'failed') => setAttemptData({ ...attemptData, status: value })}>
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
@@ -940,7 +940,7 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                                 <Label>{locale === 'en' ? 'Status' : 'स्थिति'}</Label>
                                 <Select
                                   value={editAttemptData.status}
-                                  onValueChange={(value: any) => setEditAttemptData({ ...editAttemptData, status: value })}
+                                  onValueChange={(value: 'working' | 'partial' | 'failed') => setEditAttemptData({ ...editAttemptData, status: value })}
                                 >
                                   <SelectTrigger className="mt-1">
                                     <SelectValue />

@@ -44,7 +44,7 @@ export function ProblemSubmissionForm() {
     media: []
   });
 
-  const handleInputChange = (field: keyof ProblemFormData, value: any) => {
+  const handleInputChange = (field: keyof ProblemFormData, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -95,7 +95,7 @@ export function ProblemSubmissionForm() {
     }));
   };
 
-  const uploadMedia = async (files: File[]): Promise<string[]> => {
+  const uploadMedia = async (files: File[]): Promise<Array<{ type: 'image' | 'video'; url: string; thumb_url?: string }>> => {
     if (!isConfigured || files.length === 0) return [];
 
     const supabase = getSupabase();
@@ -166,7 +166,7 @@ export function ProblemSubmissionForm() {
 
     try {
       // Upload media files
-      let mediaData: any[] = [];
+      let mediaData: Array<{ type: string; url: string; thumb_url?: string }> = [];
       if (formData.media.length > 0) {
         mediaData = await uploadMedia(formData.media);
       }

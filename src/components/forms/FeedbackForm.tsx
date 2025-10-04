@@ -143,7 +143,7 @@ export function FeedbackForm({ locale }: FeedbackFormProps) {
             </Label>
             <Select
               value={feedbackType}
-              onValueChange={(value) => setValue('feedbackType', value as any)}
+              onValueChange={(value) => setValue('feedbackType', value as 'bug' | 'feature' | 'improvement' | 'other')}
             >
               <SelectTrigger>
                 <SelectValue />

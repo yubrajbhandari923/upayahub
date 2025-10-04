@@ -135,7 +135,7 @@ export function ProblemEditForm({ problem, locale }: ProblemEditFormProps) {
               <Label htmlFor="category">
                 {locale === 'en' ? 'Category' : 'श्रेणी'} *
               </Label>
-              <Select value={category} onValueChange={(value) => setValue('category', value as any)}>
+              <Select value={category} onValueChange={(value) => setValue('category', value as 'technical' | 'policy' | 'both')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -157,7 +157,7 @@ export function ProblemEditForm({ problem, locale }: ProblemEditFormProps) {
               <Label htmlFor="status">
                 {locale === 'en' ? 'Status' : 'स्थिति'} *
               </Label>
-              <Select value={status} onValueChange={(value) => setValue('status', value as any)}>
+              <Select value={status} onValueChange={(value) => setValue('status', value as 'open' | 'in_progress' | 'solved' | 'archived')}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

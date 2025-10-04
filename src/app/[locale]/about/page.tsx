@@ -1,11 +1,9 @@
-import { getTranslations } from 'next-intl/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, Lightbulb, Heart, Mountain, Globe } from 'lucide-react';
+import { Users, MessageSquare, Lightbulb, Heart, Globe } from 'lucide-react';
 import { FeedbackForm } from '@/components/forms/FeedbackForm';
 
 export default async function AboutPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const t = await getTranslations();
 
   return (
     <div className="min-h-screen bg-gray-50">

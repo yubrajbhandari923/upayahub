@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Mountain, Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function SignInPage() {
+function SignInForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -210,3 +210,17 @@ export default function SignInPage() {
     </div>
   );
 }
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-nepal-crimson" />
+      </div>
+    }>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+export const dynamic = 'force-dynamic';

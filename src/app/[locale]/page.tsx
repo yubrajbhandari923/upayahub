@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Users, MessageSquare, Lightbulb, Mountain } from 'lucide-react';
+import { ArrowRight, Users, MessageSquare, Lightbulb } from 'lucide-react';
 import { getSupabase, isSupabaseConfigured, type Problem } from '@/lib/supabase';
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
