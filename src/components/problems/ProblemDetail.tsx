@@ -25,7 +25,9 @@ import {
   Send,
   MoreVertical,
   Edit,
-  Trash2
+  Trash2,
+  ArrowLeft,
+  Eye
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -79,6 +81,10 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
   });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ type: 'problem' | 'comment' | 'attempt', id: string } | null>(null);
+  const [recentProblems, setRecentProblems] = useState<Problem[]>([]);
+  const [sameLocationProblems, setSameLocationProblems] = useState<Problem[]>([]);
+  const [similarTagProblems, setSimilarTagProblems] = useState<Problem[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(true);
 
   const locale = useLocale();
   const router = useRouter();
@@ -100,6 +106,11 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
       fetchUserVote();
     }
   }, [user, problem.id]);
+
+  // Fetch related problems
+  useEffect(() => {
+    fetchRelatedProblems();
+  }, [problem.id]);
 
   const fetchComments = async () => {
     try {
@@ -189,6 +200,52 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
       }
     } catch (error) {
       // No vote found, which is fine
+    }
+  };
+
+  const fetchRelatedProblems = async () => {
+    try {
+      const supabase = getSupabase();
+
+      // Fetch recent problems (5 most recent, excluding current)
+      const { data: recent } = await supabase
+        .from('problems')
+        .select('id, title, status, created_at, score, tags')
+        .neq('id', problem.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      setRecentProblems(recent || []);
+
+      // Fetch same location problems
+      if (problem.location?.province) {
+        const { data: sameLocation } = await supabase
+          .from('problems')
+          .select('id, title, status, created_at, score, tags, location')
+          .neq('id', problem.id)
+          .eq('location->>province', problem.location.province)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        setSameLocationProblems(sameLocation || []);
+      }
+
+      // Fetch similar tag problems
+      if (problem.tags && problem.tags.length > 0) {
+        const { data: similarTags } = await supabase
+          .from('problems')
+          .select('id, title, status, created_at, score, tags')
+          .neq('id', problem.id)
+          .contains('tags', problem.tags)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        setSimilarTagProblems(similarTags || []);
+      }
+    } catch (error) {
+      console.error('Error fetching related problems:', error);
+    } finally {
+      setLoadingRelated(false);
     }
   };
 
@@ -521,6 +578,19 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push(`/${locale}/problems`)}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {locale === 'en' ? 'Back to Problems' : 'समस्याहरूमा फर्कनुहोस्'}
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
@@ -1154,6 +1224,136 @@ export function ProblemDetail({ problem: initialProblem }: ProblemDetailProps) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Recent Problems */}
+            {!loadingRelated && recentProblems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {locale === 'en' ? 'Recent Problems' : 'हालका समस्याहरू'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {recentProblems.map((p) => (
+                    <div
+                      key={p.id}
+                      className="cursor-pointer hover:bg-gray-50 p-2 rounded -mx-2 transition-colors"
+                      onClick={() => router.push(`/${locale}/problems/${p.id}`)}
+                    >
+                      <h4 className="text-sm font-medium line-clamp-2 mb-1">{p.title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{p.score} votes</span>
+                        {p.tags && p.tags.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{p.tags[0]}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => router.push(`/${locale}/problems`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {locale === 'en' ? 'View All' : 'सबै हेर्नुहोस्'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Same Location Problems */}
+            {!loadingRelated && sameLocationProblems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {locale === 'en' ? 'Same Location' : 'समान स्थान'}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {problem.location?.province && (
+                      locale === 'en'
+                        ? problem.location.province.charAt(0).toUpperCase() + problem.location.province.slice(1)
+                        : problem.location.province
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {sameLocationProblems.map((p) => (
+                    <div
+                      key={p.id}
+                      className="cursor-pointer hover:bg-gray-50 p-2 rounded -mx-2 transition-colors"
+                      onClick={() => router.push(`/${locale}/problems/${p.id}`)}
+                    >
+                      <h4 className="text-sm font-medium line-clamp-2 mb-1">{p.title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{p.score} votes</span>
+                        {p.tags && p.tags.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{p.tags[0]}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => router.push(`/${locale}/problems?province=${problem.location?.province || ''}`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {locale === 'en' ? 'View All' : 'सबै हेर्नुहोस्'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Similar Tags Problems */}
+            {!loadingRelated && similarTagProblems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {locale === 'en' ? 'Similar Tags' : 'समान ट्यागहरू'}
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {problem.tags && problem.tags.slice(0, 2).join(', ')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {similarTagProblems.map((p) => (
+                    <div
+                      key={p.id}
+                      className="cursor-pointer hover:bg-gray-50 p-2 rounded -mx-2 transition-colors"
+                      onClick={() => router.push(`/${locale}/problems/${p.id}`)}
+                    >
+                      <h4 className="text-sm font-medium line-clamp-2 mb-1">{p.title}</h4>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{p.score} votes</span>
+                        {p.tags && p.tags.length > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="truncate">{p.tags[0]}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => router.push(`/${locale}/problems?tags=${problem.tags?.join(',') || ''}`)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {locale === 'en' ? 'View All' : 'सबै हेर्नुहोस्'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
